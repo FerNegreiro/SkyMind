@@ -1,0 +1,28 @@
+--- Dependências ---
+
+node_modules/
+venv/
+pycache/
+*.pyc
+
+--- Arquivos de Build (Compilados) ---
+
+dist/
+build/
+backend-api/dist/
+frontend-web/dist/
+queue-worker/bin/
+queue-worker/worker
+
+--- Ambiente e Logs ---
+
+.env
+*.log
+.DS_Store
+.idea/
+.vscode/
+
+--- Docker ---
+
+docker-data/
+mongo_data/
