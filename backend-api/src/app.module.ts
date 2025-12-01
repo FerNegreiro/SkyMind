@@ -5,7 +5,7 @@ import { WeatherController } from './weather/weather.controller';
 import { WeatherService } from './weather/weather.service';
 import { UsersModule } from './users/users.module';
 import { AuthModule } from './auth/auth.module';
-import { CarsModule } from './cars/cars.module';
+import { PokemonModule } from './pokemon/pokemon.module';
 
 @Module({
   imports: [
@@ -13,7 +13,7 @@ import { CarsModule } from './cars/cars.module';
     MongooseModule.forFeature([{ name: WeatherLog.name, schema: WeatherLogSchema }]),
     UsersModule,
     AuthModule,
-    CarsModule,
+    PokemonModule,
   ],
   controllers: [WeatherController],
   providers: [WeatherService],

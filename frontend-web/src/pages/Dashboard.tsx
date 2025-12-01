@@ -3,7 +3,6 @@ import axios from 'axios';
 import { Wind, Droplets, Thermometer, Activity, BrainCircuit, Download, LogOut, AlertTriangle, Globe } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Globe } from 'lucide-react';
 
 interface WeatherLog {
   temperature: number;
@@ -53,7 +52,6 @@ export function Dashboard() {
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         handleLogout();
       } else {
-        
         if (data.length === 0) setError("Conexão com o servidor falhou.");
       }
     } finally {
@@ -85,7 +83,6 @@ export function Dashboard() {
       alert("Erro ao baixar arquivo.");
     }
   };
-
   
   if (loading && data.length === 0) {
     return (
@@ -96,7 +93,6 @@ export function Dashboard() {
       </div>
     );
   }
-
   
   const current = data.length > 0 
     ? data[data.length - 1] 
@@ -134,7 +130,6 @@ export function Dashboard() {
           </div>
         )}
 
-        {/* Se não tiver dados, mostra aviso amigável */}
         {data.length === 0 && !loading && !error && (
            <div className="bg-yellow-900/20 border border-yellow-700/50 p-4 rounded-lg flex items-center gap-3 text-yellow-200 justify-center">
              <AlertTriangle size={20} />

@@ -1,56 +1,66 @@
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
-import { ArrowLeft, ArrowRight, ArrowLeftCircle, Loader2, Calendar, DollarSign, Car as CarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowLeftCircle, Loader2, Zap, Cloud, Frown, Globe } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-interface Car {
+interface Pokemon {
   id: number;
   name: string;
-  year: number;
-  price: number;
-  image: string;
+  imageUrl: string;
+  types: string[];
 }
 
 export function Explorar() {
-  const [cars, setCars] = useState<Car[]>([]);
+  const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [totalPages, setTotalPages] = useState(1);
   const navigate = useNavigate();
+  const limit = 10; 
 
-  const fetchCars = async (pageNumber: number) => {
+  const handleLogout = useCallback(() => {
+    localStorage.removeItem('token');
+    navigate('/');
+  }, [navigate]);
+
+  const fetchPokemons = useCallback(async (pageNumber: number) => {
     const token = localStorage.getItem('token');
     
     if (!token) {
-      navigate('/');
+      handleLogout();
       return;
     }
 
     setLoading(true);
     setError(null);
-
+    const offset = (pageNumber - 1) * limit;
+    
     try {
-      const response = await axios.get(`http://localhost:3000/cars?page=${pageNumber}`, {
+      
+      const response = await axios.get(`http://localhost:3000/pokemon?limit=${limit}&offset=${offset}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && Array.isArray(response.data.data)) {
-        setCars(response.data.data);
-      } else {
-        setCars([]);
-      }
-
+      setPokemons(response.data.results);
+      setTotalPages(Math.ceil(response.data.count / limit));
+      
     } catch (err: any) {
-      console.error("Erro ao buscar Carros:", err);
-      setError("Não foi possível carregar os veículos.");
+      console.error("Erro ao buscar Pokémons:", err);
+      if (axios.isAxiosError(err) && err.response?.status === 401) {
+          handleLogout();
+      } else {
+          setError("Não foi possível carregar Pokémons. Tente novamente mais tarde.");
+      }
+      setPokemons([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [handleLogout]);
 
   useEffect(() => {
-    fetchCars(page);
-  }, [page]);
+    fetchPokemons(page);
+  }, [page, fetchPokemons]);
 
   return (
     <div className="min-h-screen p-8 font-sans bg-slate-950 text-slate-50">
@@ -66,13 +76,14 @@ export function Explorar() {
               <ArrowLeftCircle size={32} />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
-                Garagem SkyMind
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                Exploração Pokémon
               </h1>
-              <p className="text-slate-400 text-sm">Veículos via API</p>
+              <p className="text-slate-400 text-sm">Integração PokeAPI via NestJS (BFF)</p>
             </div>
           </div>
 
+          {/* Paginação */}
           <div className="flex items-center gap-4 bg-slate-900 p-2 rounded-xl border border-slate-800">
             <button 
               disabled={page === 1 || loading}
@@ -81,11 +92,11 @@ export function Explorar() {
             >
               <ArrowLeft size={20} />
             </button>
-            <span className="font-mono text-xl font-bold w-12 text-center text-orange-500">
-                {page}
+            <span className="font-mono text-xl font-bold w-12 text-center text-yellow-500">
+                {page} / {totalPages}
             </span>
             <button 
-              disabled={loading || cars.length === 0}
+              disabled={loading || page === totalPages}
               onClick={() => setPage(p => p + 1)}
               className="p-2 bg-slate-800 rounded-lg disabled:opacity-30 hover:bg-slate-700 transition-colors border border-slate-700"
             >
@@ -95,50 +106,46 @@ export function Explorar() {
         </header>
 
         {error && (
-          <div className="text-center py-10 text-red-400 bg-red-900/10 rounded-xl border border-red-900/50 mb-6">
-            <p>{error}</p>
-            <button onClick={() => fetchCars(page)} className="mt-4 underline text-sm hover:text-red-300">Tentar novamente</button>
-          </div>
+            <div className="text-center py-10 text-red-400 bg-red-900/10 rounded-xl border border-red-900/50 mb-6">
+                <p>{error}</p>
+            </div>
         )}
 
-        {loading ? (
+        {loading && pokemons.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4">
-            <Loader2 size={48} className="animate-spin text-orange-500" />
-            <p>A carregar a frota...</p>
+            <Loader2 size={48} className="animate-spin text-yellow-500" />
+            <p>A carregar Pokémons...</p>
           </div>
         ) : (
           <>
-            {cars.length === 0 && !error ? (
+            {pokemons.length === 0 && !error ? (
               <div className="text-center py-20 text-slate-500">
-                <CarIcon size={48} className="mx-auto mb-4 opacity-20" />
-                <p>Nenhum veículo encontrado.</p>
+                <Frown size={48} className="mx-auto mb-4 opacity-20" />
+                <p>Nenhum Pokémon encontrado nesta página.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
-                {cars.map((car) => (
-                  <div key={car.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-orange-500/50 transition-all hover:-translate-y-1 hover:shadow-lg group">
-                    <div className="h-48 overflow-hidden relative bg-slate-800">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 animate-fade-in">
+                {pokemons.map((pokemon) => (
+                  <div key={pokemon.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center hover:border-yellow-500/50 transition-all hover:-translate-y-1 hover:shadow-lg group cursor-pointer">
+                    <div className="w-28 h-28 bg-slate-950 rounded-full flex items-center justify-center mb-4 relative overflow-hidden border border-slate-800 group-hover:border-yellow-500/30 transition-colors">
                         <img 
-                            src={car.image} 
-                            alt={car.name}
+                            src={pokemon.imageUrl} 
+                            alt={pokemon.name} 
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://placehold.co/320x240/1e293b/FFF?text=Carro';
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/96x96/facc15/000?text=NO+IMG';
                             }}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                            className="w-20 h-20 z-10 drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900 to-transparent h-20" />
                     </div>
-                    <div className="p-5 relative">
-                        <h3 className="font-bold text-xl text-slate-100 mb-2 truncate" title={car.name}>{car.name}</h3>
-                        
-                        <div className="flex justify-between items-center text-slate-400 text-sm">
-                            <div className="flex items-center gap-1">
-                                <Calendar size={14} /> {car.year}
-                            </div>
-                            <div className="flex items-center gap-1 text-green-400 font-mono font-bold">
-                                <DollarSign size={14} /> {car.price.toLocaleString()}
-                            </div>
-                        </div>
+                    <h3 className="capitalize font-bold text-slate-200 text-lg tracking-wide group-hover:text-yellow-400 transition-colors">
+                        {pokemon.name}
+                    </h3>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                        {pokemon.types.map(type => (
+                            <span key={type} className="text-xs px-2 py-0.5 rounded-full bg-slate-800 text-slate-400">
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                            </span>
+                        ))}
                     </div>
                   </div>
                 ))}
