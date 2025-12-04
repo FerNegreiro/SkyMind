@@ -11,18 +11,30 @@ export function Login() {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(''); 
+
     try {
+      
       const response = await axios.post('http://localhost:3000/auth/login', {
         email,
         password
       });
 
       if (response.data.access_token) {
+        
         localStorage.setItem('token', response.data.access_token);
+        
         navigate('/dashboard');
+      } else {
+        setError('Login falhou. Resposta inesperada do servidor.');
       }
-    } catch (err) {
-      setError('Login falhou. Verifique suas credenciais.');
+    } catch (err: any) {
+      console.error("Erro no login:", err);
+      if (err.response && err.response.status === 401) {
+        setError('Credenciais inválidas. Verifique seu email e senha.');
+      } else {
+        setError('Erro ao conectar ao servidor. Tente novamente mais tarde.');
+      }
     }
   };
 
@@ -36,7 +48,7 @@ export function Login() {
         </div>
         
         <h1 className="text-2xl font-bold text-center text-white mb-2">Bem-vindo ao SkyMind</h1>
-        <p className="text-slate-400 text-center mb-8">Faça login para acessar o monitoramento</p>
+        <p className="text-slate-400 text-center mb-8">Faça login para aceder à monitorização</p>
 
         <form onSubmit={handleLogin} className="space-y-4">
           <div>

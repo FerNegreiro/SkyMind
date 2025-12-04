@@ -1,24 +1,26 @@
 import { useEffect, useState } from 'react';
 import axios from 'axios';
-import { ArrowLeft, ArrowRight, ArrowLeftCircle, Loader2, Calendar, DollarSign, Car as CarIcon } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ArrowLeftCircle, Loader2, Frown } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
-interface Car {
+interface Pokemon {
   id: number;
   name: string;
-  year: number;
-  price: number;
-  image: string;
+  imageUrl: string;
+  types: string[];
 }
 
 export function Explorar() {
-  const [cars, setCars] = useState<Car[]>([]);
+  const [pokemons, setPokemons] = useState<Pokemon[]>([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const navigate = useNavigate();
+  
+  const limit = 12;
 
-  const fetchCars = async (pageNumber: number) => {
+  const fetchPokemons = async (pageNumber: number) => {
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -30,26 +32,30 @@ export function Explorar() {
     setError(null);
 
     try {
-      const response = await axios.get(`http://localhost:3000/cars?page=${pageNumber}`, {
+      const offset = (pageNumber - 1) * limit;
+      
+      
+      const response = await axios.get(`http://localhost:3000/pokemon?limit=${limit}&offset=${offset}`, {
         headers: { Authorization: `Bearer ${token}` }
       });
       
-      if (response.data && Array.isArray(response.data.data)) {
-        setCars(response.data.data);
+      if (response.data && Array.isArray(response.data.results)) {
+          setPokemons(response.data.results);
+          setTotalPages(Math.ceil(response.data.count / limit));
       } else {
-        setCars([]);
+          setPokemons([]);
       }
 
-    } catch (err: any) {
-      console.error("Erro ao buscar Carros:", err);
-      setError("Não foi possível carregar os veículos.");
+    } catch (err) {
+      console.error(err);
+      setError("Erro ao carregar Pokémons.");
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchCars(page);
+    fetchPokemons(page);
   }, [page]);
 
   return (
@@ -66,10 +72,10 @@ export function Explorar() {
               <ArrowLeftCircle size={32} />
             </button>
             <div>
-              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-500">
-                Garagem SkyMind
+              <h1 className="text-3xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 to-orange-500">
+                Explorar API
               </h1>
-              <p className="text-slate-400 text-sm">Veículos via API</p>
+              <p className="text-slate-400 text-sm">Integração PokéAPI via NestJS</p>
             </div>
           </div>
 
@@ -81,11 +87,11 @@ export function Explorar() {
             >
               <ArrowLeft size={20} />
             </button>
-            <span className="font-mono text-xl font-bold w-12 text-center text-orange-500">
-                {page}
+            <span className="font-mono text-xl font-bold w-20 text-center text-yellow-500">
+                {page} / {totalPages || '?'}
             </span>
             <button 
-              disabled={loading || cars.length === 0}
+              disabled={loading || page === totalPages}
               onClick={() => setPage(p => p + 1)}
               className="p-2 bg-slate-800 rounded-lg disabled:opacity-30 hover:bg-slate-700 transition-colors border border-slate-700"
             >
@@ -95,50 +101,52 @@ export function Explorar() {
         </header>
 
         {error && (
-          <div className="text-center py-10 text-red-400 bg-red-900/10 rounded-xl border border-red-900/50 mb-6">
-            <p>{error}</p>
-            <button onClick={() => fetchCars(page)} className="mt-4 underline text-sm hover:text-red-300">Tentar novamente</button>
-          </div>
+            <div className="text-center py-10 text-red-400 bg-red-900/10 rounded-xl border border-red-900/50 mb-6">
+                <p>{error}</p>
+                <button onClick={() => fetchPokemons(page)} className="mt-4 underline text-sm hover:text-red-300">Tentar novamente</button>
+            </div>
         )}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 text-slate-500 gap-4">
-            <Loader2 size={48} className="animate-spin text-orange-500" />
-            <p>A carregar a frota...</p>
+            <Loader2 size={48} className="animate-spin text-yellow-500" />
+            <p>Capturando Pokémons...</p>
           </div>
         ) : (
           <>
-            {cars.length === 0 && !error ? (
+            {pokemons.length === 0 && !error ? (
               <div className="text-center py-20 text-slate-500">
-                <CarIcon size={48} className="mx-auto mb-4 opacity-20" />
-                <p>Nenhum veículo encontrado.</p>
+                <Frown size={48} className="mx-auto mb-4 opacity-20" />
+                <p>Nenhum Pokémon encontrado.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 animate-fade-in">
-                {cars.map((car) => (
-                  <div key={car.id} className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-orange-500/50 transition-all hover:-translate-y-1 hover:shadow-lg group">
-                    <div className="h-48 overflow-hidden relative bg-slate-800">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 animate-fade-in">
+                {pokemons.map((poke) => (
+                  <div key={poke.id} className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col items-center hover:border-yellow-500/50 transition-all hover:-translate-y-1 hover:shadow-lg hover:shadow-yellow-500/10 group cursor-pointer relative overflow-hidden">
+                    
+                    <div className="absolute inset-0 bg-gradient-to-b from-slate-800/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                    <div className="w-32 h-32 flex items-center justify-center mb-4 relative z-10">
                         <img 
-                            src={car.image} 
-                            alt={car.name}
+                            src={poke.imageUrl} 
+                            alt={poke.name}
                             onError={(e) => {
-                              (e.target as HTMLImageElement).src = 'https://placehold.co/320x240/1e293b/FFF?text=Carro';
-                            }}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" 
+                                (e.target as HTMLImageElement).src = 'https://placehold.co/96x96/facc15/000?text=?';
+                            }} 
+                            className="w-full h-full object-contain drop-shadow-xl group-hover:scale-110 transition-transform duration-300" 
                         />
-                        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-900 to-transparent h-20" />
                     </div>
-                    <div className="p-5 relative">
-                        <h3 className="font-bold text-xl text-slate-100 mb-2 truncate" title={car.name}>{car.name}</h3>
-                        
-                        <div className="flex justify-between items-center text-slate-400 text-sm">
-                            <div className="flex items-center gap-1">
-                                <Calendar size={14} /> {car.year}
-                            </div>
-                            <div className="flex items-center gap-1 text-green-400 font-mono font-bold">
-                                <DollarSign size={14} /> {car.price.toLocaleString()}
-                            </div>
-                        </div>
+                    
+                    <h3 className="capitalize font-bold text-slate-200 text-lg tracking-wide group-hover:text-yellow-400 transition-colors z-10">
+                        {poke.name}
+                    </h3>
+                    
+                    <div className="flex gap-1 mt-2 z-10 flex-wrap justify-center">
+                      {poke.types.map((t) => (
+                        <span key={t} className="text-[10px] uppercase font-bold px-2 py-1 bg-slate-800 rounded-full text-slate-400 border border-slate-700">
+                          {t}
+                        </span>
+                      ))}
                     </div>
                   </div>
                 ))}

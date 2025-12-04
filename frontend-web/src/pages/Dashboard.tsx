@@ -1,9 +1,27 @@
 import { useEffect, useState, useCallback } from 'react';
 import axios from 'axios';
-import { Wind, Droplets, Thermometer, Activity, BrainCircuit, Download, LogOut, AlertTriangle, Globe } from 'lucide-react';
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+
+import { 
+  Wind, 
+  Droplets, 
+  Thermometer, 
+  Activity, 
+  BrainCircuit, 
+  Download, 
+  LogOut, 
+  AlertTriangle, 
+  Globe 
+} from 'lucide-react';
+import { 
+  AreaChart, 
+  Area, 
+  XAxis, 
+  YAxis, 
+  CartesianGrid, 
+  Tooltip, 
+  ResponsiveContainer 
+} from 'recharts';
 import { useNavigate } from 'react-router-dom';
-import { AlertTriangle, Globe } from 'lucide-react';
 
 interface WeatherLog {
   temperature: number;
@@ -27,6 +45,7 @@ export function Dashboard() {
 
   const fetchData = useCallback(async () => {
     const token = localStorage.getItem('token');
+
     if (!token) {
       handleLogout();
       return;
@@ -47,17 +66,18 @@ export function Dashboard() {
       
       setData(formattedData);
       setInsight(aiMessage);
-      setError(null);
+      setError(null); 
     } catch (err: any) {
       console.error("Erro API:", err);
       if (axios.isAxiosError(err) && err.response?.status === 401) {
         handleLogout();
       } else {
-        
-        if (data.length === 0) setError("Conexão com o servidor falhou.");
+        if (data.length === 0) {
+            setError("Falha ao conectar com o servidor. Verifique se o Backend está online.");
+        }
       }
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   }, [handleLogout, data.length]);
 
@@ -82,11 +102,11 @@ export function Dashboard() {
       link.click();
       link.remove();
     } catch (error) {
+      console.error("Erro no download", error);
       alert("Erro ao baixar arquivo.");
     }
   };
 
-  
   if (loading && data.length === 0) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-slate-950">
@@ -97,10 +117,23 @@ export function Dashboard() {
     );
   }
 
-  
-  const current = data.length > 0 
-    ? data[data.length - 1] 
-    : { temperature: 0, humidity: 0, windSpeed: 0, time: '--:--' };
+  if (error && data.length === 0) {
+    return (
+      <div className="min-h-screen flex flex-col items-center justify-center bg-slate-950 text-slate-200 gap-4 p-4 text-center">
+        <AlertTriangle size={48} className="text-red-500 mb-2" />
+        <h2 className="text-2xl font-bold">Ops! Algo deu errado.</h2>
+        <p className="text-slate-400 max-w-md">{error}</p>
+        <button 
+          onClick={handleLogout} 
+          className="mt-4 px-6 py-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
+        >
+          Voltar para Login
+        </button>
+      </div>
+    );
+  }
+
+  const current = data.length > 0 ? data[data.length - 1] : { temperature: 0, humidity: 0, windSpeed: 0, time: '--:--' };
 
   return (
     <div className="min-h-screen p-8 font-sans bg-slate-950 text-slate-50">
@@ -115,7 +148,7 @@ export function Dashboard() {
           </div>
           
           <div className="flex flex-wrap justify-center gap-4">
-            <button onClick={() => navigate('/explorar')} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-colors border border-indigo-500 text-sm font-medium">
+            <button onClick={() => navigate('/explorar')} className="flex items-center gap-2 bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-lg transition-colors border border-indigo-500 text-sm font-medium shadow-lg shadow-indigo-500/20">
               <Globe size={16} /> Explorar API
             </button>
             <button onClick={handleDownload} className="flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-200 px-4 py-2 rounded-lg transition-colors border border-slate-700 text-sm font-medium">
@@ -132,14 +165,6 @@ export function Dashboard() {
             <AlertTriangle size={20} />
             <span>{error}</span>
           </div>
-        )}
-
-        {/* Se não tiver dados, mostra aviso amigável */}
-        {data.length === 0 && !loading && !error && (
-           <div className="bg-yellow-900/20 border border-yellow-700/50 p-4 rounded-lg flex items-center gap-3 text-yellow-200 justify-center">
-             <AlertTriangle size={20} />
-             <span>Aguardando dados do sensor... Verifique se o Python está rodando.</span>
-           </div>
         )}
 
         <div className="bg-gradient-to-r from-indigo-900 to-slate-900 p-6 rounded-2xl border border-indigo-700 shadow-lg flex flex-col md:flex-row items-center gap-6">
